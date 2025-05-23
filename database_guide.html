@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adatbázisok Világa</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.4);
+            background: linear-gradient(45deg, #fff, #a8edea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 35px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .section h2 {
+            color: #1e3c72;
+            margin-bottom: 25px;
+            font-size: 2.2rem;
+            border-bottom: 3px solid #2a5298;
+            padding-bottom: 10px;
+        }
+
+        .db-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .db-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            transform: translateY(0);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .db-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .db-card:hover::before {
+            left: 100%;
+        }
+
+        .db-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .db-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .db-icon {
+            font-size: 2rem;
+        }
+
+        .comparison-table {
+            overflow-x: auto;
+            margin: 25px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .sql-demo {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 25px;
+            border-radius: 15px;
+            font-family: 'Courier New', monospace;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sql-demo::before {
+            content: 'SQL';
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .sql-keyword { color: #63b3ed; }
+        .sql-string { color: #fbd38d; }
+        .sql-number { color: #f6ad55; }
+        .sql-comment { color: #4fd1c7; }
+
+        .interactive-section {
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            margin: 30px 0;
+        }
+
+        .demo-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+
+        .btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+
+        .data-table {
+            max-height: 300px;
+            overflow-y: auto;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .nosql-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        .nosql-card {
+            background: linear-gradient(45deg, #2193b0, #6dd5ed);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .nosql-card:hover {
+            transform: scale(1.02);
+        }
+
+        .code-block {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .performance-meter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .meter-bar {
+            flex: 1;
+            height: 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .meter-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb);
+            border-radius: 10px;
+            transition: width 1s ease;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2.5rem; }
+            .db-types { grid-template-columns: 1fr; }
+            .demo-controls { flex-direction: column; align-items: center; }
+            .nosql-examples { grid-template-columns: 1fr; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗄️ Adatbázisok Világa</h1>
+            <p class="subtitle">Fedezd fel a modern adattárolás világát</p>
+            <p>Relációs és NoSQL adatbázisok összehasonlítása és gyakorlati útmutató</p>
+        </div>
+
+        <div class="section fade-in">
+            <h2>Mi az az adatbázis?</h2>
+            <p>Az adatbázis egy strukturált adatgyűjtemény, amely lehetővé teszi az információk hatékony tárolását, rendszerezését és lekérdezését. A modern alkalmazások szívében található adatbázisok nélkül nem létezhetne a mai digitális világ.</p>
+            
+            <div class="performance-meter">
+                <span>Adatbázis használat növekedése:</span>
+                <div class="meter-bar">
+                    <div class="meter-fill" style="width: 85%;"></div>
+                </div>
+                <span>85%</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Adatbázis típusok</h2>
+            <div class="db-types">
+                <div class="db-card pulse">
+                    <h3><span class="db-icon">🏛️</span>Relációs (SQL)</h3>
+                    <p><strong>Példák:</strong> MySQL, PostgreSQL, Oracle, SQL Server</p>
+                    <p><strong>Jellemzők:</strong> Táblás szerkezet, ACID tulajdonságok, összetett lekérdezések</p>
+                    <p><strong>Előnyök:</strong> Megbízható, konzisztens, standard SQL nyelv</p>
+                    <p><strong>Használat:</strong> Pénzügyi rendszerek, e-commerce, ERP</p>
+                </div>
+
+                <div class="db-card">
+                    <h3><span class="db-icon">📄</span>Dokumentum-orientált</h3>
+                    <p><strong>Példák:</strong> MongoDB, CouchDB, Amazon DocumentDB</p>
+                    <p><strong>Jellemzők:</strong> JSON/BSON dokumentumok, flexibilis séma</p>
+                    <p><strong>Előnyök:</strong> Gyors fejlesztés, skálázhatóság</p>
+                    <p><strong>Használat:</strong> Web alkalmazások, tartalomkezelés</p>
+                </div>
+
+                <div class="db-card">
+                    <h3><span class="db-icon">🔑</span>Kulcs-érték tárolók</h3>
+                    <p><strong>Példák:</strong> Redis, Amazon DynamoDB, Riak</p>
+                    <p><strong>Jellemzők:</strong> Egyszerű kulcs-érték párok, gyors hozzáférés</p>
+                    <p><strong>Előnyök:</strong> Rendkívül gyors, egyszerű használat</p>
+                    <p><strong>Használat:</strong> Cache-elés, session tárolás</p>
+                </div>
+
+                <div class="db-card">
+                    <h3><span class="db-icon">🕸️</span>Gráf adatbázisok</h3>
+                    <p><strong>Példák:</strong> Neo4j, Amazon Neptune, ArangoDB</p>
+                    <p><strong>Jellemzők:</strong> Csomópontok és kapcsolatok, komplex kapcsolatok</p>
+                    <p><strong>Előnyök:</strong> Kapcsolatok elemzése, ajánlórendszerek</p>
+                    <p><strong>Használat:</strong> Közösségi hálózatok, fraud detection</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>SQL vs NoSQL összehasonlítás</h2>
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tulajdonság</th>
+                            <th>SQL (Relációs)</th>
+                            <th>NoSQL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Adatmodell</strong></td>
+                            <td>Táblás, fix séma</td>
+                            <td>Flexibilis, változó séma</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Skálázhatóság</strong></td>
+                            <td>Vertikális (erősebb szerver)</td>
+                            <td>Horizontális (több szerver)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Konzisztencia</strong></td>
+                            <td>ACID garancia</td>
+                            <td>Eventual consistency</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Lekérdezési nyelv</strong></td>
+                            <td>Standard SQL</td>
+                            <td>API-k, speciális nyelvek</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Használati terület</strong></td>
+                            <td>Komplex tranzakciók</td>
+                            <td>Nagy mennyiségű adat, gyors fejlesztés</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- <div class="interactive-section">
+            <h2>📊 Adatbázis népszerűség statisztika</h2>
+            <p>Az alábbi diagram mutatja a különböző adatbázis típusok piaci részesedését és népszerűségét:</p>
+            
+            <div class="demo-controls">
+                <button class="btn" onclick="updateChart('usage')">Használati statisztika</button>
+                <button class="btn" onclick="updateChart('growth')">Növekedési ütem</button>
+                <button class="btn" onclick="updateChart('satisfaction')">Fejlesztői elégedettség</button>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-wrapper">
+                    <canvas id="dbChart"></canvas>
+                </div>
+            </div>
+        </div> -->
+
+        <div class="section">
+            <h2>SQL példák és gyakorlat</h2>
+            <p>Íme néhány gyakori SQL parancs és azok magyarázata:</p>
+
+            <h3>🔍 Adatok lekérdezése (SELECT)</h3>
+            <div class="sql-demo">
+<span class="sql-comment">-- Összes felhasználó lekérdezése</span><br>
+<span class="sql-keyword">SELECT</span> * <span class="sql-keyword">FROM</span> users;<br><br>
+
+<span class="sql-comment">-- Specifikus oszlopok és feltételek</span><br>
+<span class="sql-keyword">SELECT</span> name, email, age<br>
+<span class="sql-keyword">FROM</span> users<br>
+<span class="sql-keyword">WHERE</span> age > <span class="sql-number">25</span><br>
+<span class="sql-keyword">AND</span> city = <span class="sql-string">'Budapest'</span><br>
+<span class="sql-keyword">ORDER BY</span> name <span class="sql-keyword">ASC</span>;
+            </div>
+
+            <h3>➕ Adatok beszúrása (INSERT)</h3>
+            <div class="sql-demo">
+<span class="sql-comment">-- Új felhasználó hozzáadása</span><br>
+<span class="sql-keyword">INSERT INTO</span> users (name, email, age, city)<br>
+<span class="sql-keyword">VALUES</span> (<span class="sql-string">'Kovács János'</span>, <span class="sql-string">'janos@email.com'</span>, <span class="sql-number">30</span>, <span class="sql-string">'Budapest'</span>);
+            </div>
+
+            <h3>🔄 Adatok frissítése (UPDATE)</h3>
+            <div class="sql-demo">
+<span class="sql-comment">-- Felhasználó adatainak módosítása</span><br>
+<span class="sql-keyword">UPDATE</span> users<br>
+<span class="sql-keyword">SET</span> age = <span class="sql-number">31</span>, city = <span class="sql-string">'Debrecen'</span><br>
+<span class="sql-keyword">WHERE</span> email = <span class="sql-string">'janos@email.com'</span>;
+            </div>
+
+            <h3>❌ Adatok törlése (DELETE)</h3>
+            <div class="sql-demo">
+<span class="sql-comment">-- Inaktív felhasználók törlése</span><br>
+<span class="sql-keyword">DELETE FROM</span> users<br>
+<span class="sql-keyword">WHERE</span> last_login < <span class="sql-string">'2023-01-01'</span>;
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>NoSQL példák</h2>
+            <div class="nosql-examples">
+                <div class="nosql-card">
+                    <h3>📄 MongoDB (Dokumentum)</h3>
+                    <div class="code-block">
+// Dokumentum beszúrása
+db.users.insertOne({
+  name: "Kovács János",
+  email: "janos@email.com",
+  age: 30,
+  address: {
+    city: "Budapest",
+    street: "Fő utca 12"
+  },
+  hobbies: ["olvasás", "fotózás"]
+});
+
+// Lekérdezés
+db.users.find({age: {$gt: 25}});
+                    </div>
+                </div>
+
+                <div class="nosql-card">
+                    <h3>🔑 Redis (Kulcs-érték)</h3>
+                    <div class="code-block">
+# Érték beállítása
+SET user:1001:name "Kovács János"
+SET user:1001:email "janos@email.com"
+
+# Érték lekérdezése
+GET user:1001:name
+
+# Lista kezelése
+LPUSH user:1001:hobbies "olvasás"
+LPUSH user:1001:hobbies "fotózás"
+LRANGE user:1001:hobbies 0 -1
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎯 Melyik adatbázist válaszd?</h2>
+            
+            <div class="db-types">
+                <div class="db-card" style="background: linear-gradient(135deg, #11998e, #38ef7d);">
+                    <h3>🏛️ Válaszd a SQL-t, ha:</h3>
+                    <ul style="margin-top: 15px;">
+                        <li>• Komplex lekérdezésekre van szükség</li>
+                        <li>• ACID tulajdonságok fontosak</li>
+                        <li>• Strukturált, konzisztens adatok</li>
+                        <li>• Pénzügyi vagy kritikus rendszerek</li>
+                        <li>• Tapasztalt SQL fejlesztők</li>
+                    </ul>
+                </div>
+
+                <div class="db-card" style="background: linear-gradient(135deg, #ee0979, #ff6a00);">
+                    <h3>🚀 Válaszd a NoSQL-t, ha:</h3>
+                    <ul style="margin-top: 15px;">
+                        <li>• Gyors fejlesztési ciklusok</li>
+                        <li>• Változó adatstruktúrák</li>
+                        <li>• Horizontális skálázás szükséges</li>
+                        <li>• Nagy mennyiségű adat</li>
+                        <li>• Valós idejű alkalmazások</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="interactive-section">
+            <h2>⚡ Teljesítmény összehasonlítás</h2>
+            <p>Az alábbi mutatók a különböző adatbázis típusok jellemző teljesítményét mutatják:</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 25px;">
+                <div>
+                    <h4>🏃‍♂️ Olvasási sebesség</h4>
+                    <div class="performance-meter">
+                        <span>NoSQL:</span>
+                        <div class="meter-bar"><div class="meter-fill" style="width: 90%;"></div></div>
+                        <span>90%</span>
+                    </div>
+                    <div class="performance-meter">
+                        <span>SQL:</span>
+                        <div class="meter-bar"><div class="meter-fill" style="width: 75%;"></div></div>
+                        <span>75%</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4>✍️ Írási sebesség</h4>
+                    <div class="performance-meter">
+                        <span>NoSQL:</span>
+                        <div class="meter-bar"><div class="meter-fill" style="width: 85%;"></div></div>
+                        <span>85%</span>
+                    </div>
+                    <div class="performance-meter">
+                        <span>SQL:</span>
+                        <div class="meter-bar"><div class="meter-fill" style="width: 70%;"></div></div>
+                        <span>70%</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4>🔒 Konzisztencia</h4>
+                    <div class="performance-meter">
+                        <span>SQL:</span>
+                        <div class="meter-bar"><div class="meter-fill" style="width: 95%;"></div></div>
+                        <span>95%</span>
+                    </div>
+                    <div class="performance-meter">
+                        <span>NoSQL:</span>
+                        <div class="meter-bar"><div class="meter-fill" style="width: 70%;"></div></div>
+                        <span>70%</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4>📈 Skálázhatóság</h4>
+                    <div class="performance-meter">
+                        <span>NoSQL:</span>
+                        <div class="meter-bar"><div class="meter-fill" style="width: 95%;"></div></div>
+                        <span>95%</span>
+                    </div>
+                    <div class="performance-meter">
+                        <span>SQL:</span>
+                        <div class="meter-bar"><div class="meter-fill" style="width: 60%;"></div></div>
+                        <span>60%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Adatbázis statisztikák
+        const dbStats = {
+            usage: {
+                labels: ['MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'Oracle', 'SQL Server', 'Neo4j'],
+                data: [39.2, 31.1, 27.7, 25.1, 15.8, 13.4, 4.2],
+                title: 'Adatbázis használat (%)',
+                colors: ['#ff6384', '#36a2eb', '#4bc0c0', '#ff9f40', '#9966ff', '#ffcd56', '#ff6384']
+            },
+            growth: {
+                labels: ['MongoDB', 'PostgreSQL', 'Redis', 'Neo4j', 'MySQL', 'Oracle', 'SQL Server'],
+                data: [25.3, 18.7, 16.4, 14.2, 8.1, 2.3, 1.8],
+                title: 'Éves növekedési ütem (%)',
+                colors: ['#4bc0c0', '#36a2eb', '#ff9f40', '#ff6384', '#ff6384', '#9966ff', '#ffcd56']
+            },
+            satisfaction: {
+                labels: ['PostgreSQL', 'Redis', 'MongoDB', 'Neo4j', 'MySQL', 'SQL Server', 'Oracle'],
+                data: [8.7, 8.4, 8.1, 7.9, 7.3, 6.8, 6.2],
+                title: 'Fejlesztői elégedettség (1-10)',
+                colors: ['#36a2eb', '#ff9f40', '#4bc0c0', '#ff6384', '#ff6384', '#ffcd56', '#9966ff']
+            }
+        };
+
+        let currentChart;
+
+        // Diagram inicializálása
+        function initChart() {
+            const ctx = document.getElementById('dbChart').getContext('2d');
+            
+            currentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dbStats.usage.labels,
+                    datasets: [{
+                        label: dbStats.usage.title,
+                        data: dbStats.usage.data,
+                        backgroundColor: dbStats.usage.colors,
+                        borderColor: dbStats.usage.colors,
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Adatbázisok piaci részesedése',
+                            font: { size: 18 }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutBounce'
+                    }
+                }
+            });
+        }
+
+        // Diagram frissítése
+        function updateChart(type) {
+            const stats = dbStats[type];
+            
+            currentChart.data.labels = stats.labels;
+            currentChart.data.datasets[0].label = stats.title;
+            currentChart.data.datasets[0].data = stats.data;
+            currentChart.data.datasets[0].backgroundColor = stats.colors;
+            currentChart.data.datasets[0].borderColor = stats.colors;
+            
+            let title = '';
+            switch(type) {
+                case 'usage': title = 'Adatbázisok piaci részesedése'; break;
+                case 'growth': title = 'Adatbázisok növekedési üteme'; break;
+                case 'satisfaction': title = 'Fejlesztői elégedettség'; break;
+            }
+            currentChart.options.plugins.title.text = title;
+            
+            currentChart.update('active');
+        }
+
+        // Animációk és interakciók
+        document.addEventListener('DOMContentLoaded', function() {
+            initChart();
+            
+            // Scroll animációk
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('fade-in');
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.section').forEach(section => {
+                observer.observe(section);
+            });
+
+            // Teljesítmény mutatók animációja
+            setTimeout(() => {
+                document.querySelectorAll('.meter-fill').forEach(fill => {
+                    const width = fill.style.width;
+                    fill.style.width = '0%';
+                    setTimeout(() => {
+                        fill.style.width = width;
+                    }, 100);})});})
